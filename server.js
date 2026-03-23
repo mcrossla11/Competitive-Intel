@@ -9,6 +9,11 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Health check endpoint — Railway probes this to confirm the service is alive
+app.get('/', (req, res) => {
+    res.json({ status: 'ok' });
+});
+
 // Calls the Anthropic API with the given company name and returns the raw response JSON
 async function callAnthropicAPI(companyName) {
     const prompt = `Produce a competitive intelligence brief for: ${companyName}
@@ -84,6 +89,11 @@ app.post('/api/analyse', async (req, res) => {
     }
 
     return res.json(brief);
+});
+
+// Catches any unhandled promise rejections so the process does not crash
+process.on('unhandledRejection', (reason) => {
+    console.error('Unhandled rejection:', reason);
 });
 
 // Starts the Express server on the configured port
