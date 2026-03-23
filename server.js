@@ -9,8 +9,12 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Health check endpoint — Railway probes this to confirm the service is alive
+// Health check endpoints — Railway probes these to confirm the service is alive
 app.get('/', (req, res) => {
+    res.json({ status: 'ok' });
+});
+
+app.get('/health', (req, res) => {
     res.json({ status: 'ok' });
 });
 
