@@ -1,9 +1,10 @@
+const PORT = process.env.PORT || 3000;
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 // Enable CORS for all origins and parse incoming JSON request bodies
 app.use(cors());
@@ -102,5 +103,5 @@ process.on('unhandledRejection', (reason) => {
 
 // Starts the Express server on the configured port
 app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+    console.log('Server running on port ' + PORT);
 });
