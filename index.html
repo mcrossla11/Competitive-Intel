@@ -339,7 +339,9 @@
       hideResults();
 
       try {
-        const response = await fetch('http://localhost:3000/api/analyse', {
+        // const API_URL = 'http://localhost:3000/api/analyse'; // local development
+        const API_URL = 'https://competitive-intel-production-ea0d.up.railway.app/api/analyse'; // production
+        const response = await fetch(API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ company })
@@ -357,7 +359,7 @@
         populateResults(data, company);
 
       } catch (err) {
-        showError('Could not reach the server. Make sure the backend is running on port 3000.');
+        showError('Could not reach the server. Check your internet connection or try again.');
       } finally {
         setLoadingState(false);
       }
