@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Competitive Intelligence Brief Generator</title>
+  <script type="module">
+    import * as docxLib from 'https://esm.sh/docx@7.8.2';
+    window.docx = docxLib;
+  </script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f2f4f8;
+      color: #111;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: #003087;
+      color: #fff;
+      padding: 32px 24px;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    header p {
+      font-size: 0.95rem;
+      opacity: 0.85;
+    }
+
+    /* ── Main wrapper ── */
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 32px 16px 64px;
+    }
+
+    /* ── Input card ── */
+    .input-card {
+      background: #fff;
+      border: 1px solid #000;
+      border-radius: 4px;
+      padding: 28px 24px;
+      margin-bottom: 28px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .input-row input {
+      flex: 1 1 240px;
+      font-size: 1rem;
+      font-family: inherit;
+      padding: 10px 14px;
+      border: 1px solid #000;
+      border-radius: 4px;
+      outline: none;
+    }
+
+    .input-row input:focus {
+      border-color: #003087;
+      box-shadow: 0 0 0 2px rgba(0, 48, 135, 0.15);
+    }
+
+    .btn-generate {
+      background: #003087;
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 10px 24px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn-generate:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ── Status messages ── */
+    .loading-bar {
+      display: none;
+      background: #e8f0fe;
+      border: 1px solid #003087;
+      border-radius: 4px;
+      padding: 12px 16px;
+      margin-top: 16px;
+      font-size: 0.9rem;
+      color: #003087;
+    }
+
+    .error-bar {
+      display: none;
+      background: #fdecea;
+      border: 1px solid #c0392b;
+      border-radius: 4px;
+      padding: 12px 16px;
+      margin-top: 16px;
+      font-size: 0.9rem;
+      color: #c0392b;
+    }
+
+    /* ── Results area ── */
+    #results {
+      display: none;
+    }
+
+    /* ── Section card ── */
+    .section-card {
+      background: #fff;
+      border: 1px solid #000;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+
+    .section-card .card-header {
+      background: #003087;
+      color: #fff;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 10px 18px;
+    }
+
+    .section-card .card-body {
+      padding: 18px;
+      font-size: 0.95rem;
+      line-height: 1.65;
+    }
+
+    .section-card .card-body ul {
+      padding-left: 20px;
+    }
+
+    .section-card .card-body ul li {
+      margin-bottom: 6px;
+    }
+
+    /* ── Confidence banner ── */
+    .confidence-banner {
+      border-radius: 4px;
+      padding: 14px 18px;
+      margin-bottom: 24px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border: 1px solid rgba(0,0,0,0.15);
+    }
+
+    .confidence-banner.high {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .confidence-banner.medium {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .confidence-banner.low {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    /* ── Download button ── */
+    .btn-download {
+      background: #27ae60;
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 12px 28px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      display: block;
+      margin: 0 auto;
+    }
+
+    .btn-download:hover {
+      background: #219a52;
+    }
+
+    /* ── Badge (yellow, used for company name display) ── */
+    .company-badge {
+      display: inline-block;
+      background: #F7B731;
+      color: #111;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 2px;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+
+    @media (max-width: 600px) {
+      header h1 {
+        font-size: 1.3rem;
+      }
+
+      .btn-generate {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Competitive Intelligence Brief Generator</h1>
+    <p>AI-powered briefs for strategy and consulting teams</p>
+  </header>
+
+  <main>
+
+    <!-- Input card -->
+    <div class="input-card">
+      <div class="input-row">
+        <input
+          type="text"
+          id="company-input"
+          placeholder="e.g. Salesforce, Stripe, Notion..."
+          autocomplete="off"
+        />
+        <button class="btn-generate" id="generate-btn" onclick="generateBrief()">
+          Generate Brief
+        </button>
+      </div>
+      <div class="loading-bar" id="loading-bar">
+        Generating brief &mdash; this takes 5&ndash;10 seconds&hellip;
+      </div>
+      <div class="error-bar" id="error-bar"></div>
+    </div>
+
+    <!-- Results -->
+    <div id="results">
+
+      <!-- 1. Company Snapshot -->
+      <div class="section-card">
+        <div class="card-header">
+          Company Snapshot
+          <span class="company-badge" id="badge-company"></span>
+        </div>
+        <div class="card-body" id="section-snapshot"></div>
+      </div>
+
+      <!-- 2. Market Positioning -->
+      <div class="section-card">
+        <div class="card-header">Market Positioning</div>
+        <div class="card-body" id="section-positioning"></div>
+      </div>
+
+      <!-- 3. Strengths -->
+      <div class="section-card">
+        <div class="card-header">Strengths</div>
+        <div class="card-body" id="section-strengths"></div>
+      </div>
+
+      <!-- 4. Weaknesses & Gaps -->
+      <div class="section-card">
+        <div class="card-header">Weaknesses &amp; Gaps</div>
+        <div class="card-body" id="section-weaknesses"></div>
+      </div>
+
+      <!-- 5. Recent Moves -->
+      <div class="section-card">
+        <div class="card-header">Recent Moves</div>
+        <div class="card-body" id="section-recent-moves"></div>
+      </div>
+
+      <!-- 6. Opportunities for Competitors -->
+      <div class="section-card">
+        <div class="card-header">Opportunities for Competitors</div>
+        <div class="card-body" id="section-opportunities"></div>
+      </div>
+
+      <!-- 7. Watch List -->
+      <div class="section-card">
+        <div class="card-header">Watch List</div>
+        <div class="card-body" id="section-watch-list"></div>
+      </div>
+
+      <!-- Confidence banner -->
+      <div class="confidence-banner" id="confidence-banner"></div>
+
+      <!-- Download button -->
+      <button class="btn-download" onclick="downloadWordReport()">
+        Download Word Report
+      </button>
+
+    </div><!-- /#results -->
+  </main>
+
+  <script>
+    // Stores the last successful API response so the download can use it
+    let lastResponse = null;
+    let lastCompany = '';
+
+    // Sends the company name to the backend and populates the results
+    async function generateBrief() {
+      const input = document.getElementById('company-input');
+      const company = input.value.trim();
+
+      if (!company) {
+        showError('Please enter a company name before generating a brief.');
+        return;
+      }
+
+      setLoadingState(true);
+      hideError();
+      hideResults();
+
+      try {
+        const response = await fetch('http://localhost:3000/api/analyse', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ company })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          showError(data.error || 'An unexpected error occurred. Please try again.');
+          return;
+        }
+
+        lastResponse = data;
+        lastCompany = company;
+        populateResults(data, company);
+
+      } catch (err) {
+        showError('Could not reach the server. Make sure the backend is running on port 3000.');
+      } finally {
+        setLoadingState(false);
+      }
+    }
+
+    // Fills every result section with data from the API response
+    function populateResults(data, company) {
+      document.getElementById('badge-company').textContent = company;
+
+      // Prose fields
+      setText('section-snapshot', data.snapshot);
+      setText('section-positioning', data.positioning);
+      setText('section-opportunities', data.opportunities);
+
+      // Bulleted list fields
+      setList('section-strengths', data.strengths);
+      setList('section-weaknesses', data.weaknesses);
+      setList('section-recent-moves', data.recent_moves);
+      setList('section-watch-list', data.watch_items);
+
+      // Confidence banner
+      const banner = document.getElementById('confidence-banner');
+      const level = data.confidence ? data.confidence.toLowerCase() : 'medium';
+      const disclaimer = data.disclaimer ? data.disclaimer : '';
+      banner.className = 'confidence-banner ' + level;
+      banner.textContent = 'Confidence: ' + capitalise(level) + ' \u2014 ' + disclaimer;
+
+      document.getElementById('results').style.display = 'block';
+      document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Sets the text content of a prose section element
+    function setText(id, value) {
+      document.getElementById(id).textContent = value || '';
+    }
+
+    // Builds a <ul> list inside the given section element
+    function setList(id, items) {
+      const el = document.getElementById(id);
+      if (!items || items.length === 0) {
+        el.textContent = 'No data available.';
+        return;
+      }
+      const ul = document.createElement('ul');
+      items.forEach(function(item) {
+        const li = document.createElement('li');
+        li.textContent = item;
+        ul.appendChild(li);
+      });
+      el.innerHTML = '';
+      el.appendChild(ul);
+    }
+
+    // Shows or hides the loading bar and disables / enables the button
+    function setLoadingState(isLoading) {
+      document.getElementById('loading-bar').style.display = isLoading ? 'block' : 'none';
+      document.getElementById('generate-btn').disabled = isLoading;
+    }
+
+    // Displays a red error message below the input
+    function showError(message) {
+      const bar = document.getElementById('error-bar');
+      bar.textContent = message;
+      bar.style.display = 'block';
+    }
+
+    // Hides the error bar
+    function hideError() {
+      document.getElementById('error-bar').style.display = 'none';
+    }
+
+    // Hides the results section
+    function hideResults() {
+      document.getElementById('results').style.display = 'none';
+    }
+
+    // Returns a string with the first letter capitalised
+    function capitalise(str) {
+      if (!str) return '';
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    // Builds and downloads a Word document containing all brief sections
+    function downloadWordReport() {
+      if (!lastResponse || !lastCompany) return;
+      if (!window.docx) {
+        showError('Word export library is still loading — please try again in a moment.');
+        return;
+      }
+
+      const data = lastResponse;
+      const DARK_BLUE = '003087';
+
+      // Helper: creates a heading paragraph with dark blue colour
+      function makeHeading(text) {
+        return new docx.Paragraph({
+          children: [
+            new docx.TextRun({
+              text: text,
+              bold: true,
+              color: DARK_BLUE,
+              size: 26
+            })
+          ],
+          spacing: { before: 300, after: 100 }
+        });
+      }
+
+      // Helper: creates a plain prose paragraph
+      function makeParagraph(text) {
+        return new docx.Paragraph({
+          children: [new docx.TextRun({ text: text || '', size: 22 })],
+          spacing: { after: 120 }
+        });
+      }
+
+      // Helper: creates a bullet point paragraph
+      function makeBullet(text) {
+        return new docx.Paragraph({
+          bullet: { level: 0 },
+          children: [new docx.TextRun({ text: text || '', size: 22 })],
+          spacing: { after: 80 }
+        });
+      }
+
+      // Helper: converts an array into bullet paragraphs
+      function makeList(items) {
+        if (!items || items.length === 0) {
+          return [makeParagraph('No data available.')];
+        }
+        return items.map(function(item) { return makeBullet(item); });
+      }
+
+      const confidenceLevel = data.confidence ? data.confidence : 'Unknown';
+      const confidenceText = data.disclaimer ? data.disclaimer : '';
+
+      const children = [
+        // Title
+        new docx.Paragraph({
+          children: [
+            new docx.TextRun({
+              text: 'Competitive Intelligence Brief: ' + lastCompany,
+              bold: true,
+              color: DARK_BLUE,
+              size: 36
+            })
+          ],
+          spacing: { after: 200 }
+        }),
+
+        makeHeading('COMPANY SNAPSHOT'),
+        makeParagraph(data.snapshot),
+
+        makeHeading('MARKET POSITIONING'),
+        makeParagraph(data.positioning),
+
+        makeHeading('STRENGTHS'),
+        ...makeList(data.strengths),
+
+        makeHeading('WEAKNESSES & GAPS'),
+        ...makeList(data.weaknesses),
+
+        makeHeading('RECENT MOVES'),
+        ...makeList(data.recent_moves),
+
+        makeHeading('OPPORTUNITIES FOR COMPETITORS'),
+        makeParagraph(data.opportunities),
+
+        makeHeading('WATCH LIST'),
+        ...makeList(data.watch_items),
+
+        // Confidence line
+        new docx.Paragraph({
+          children: [
+            new docx.TextRun({
+              text: 'Confidence: ' + capitalise(confidenceLevel) + ' \u2014 ' + confidenceText,
+              bold: true,
+              size: 20,
+              italics: true
+            })
+          ],
+          spacing: { before: 300, after: 0 }
+        })
+      ];
+
+      const doc = new docx.Document({
+        sections: [{ properties: {}, children: children }]
+      });
+
+      docx.Packer.toBlob(doc).then(function(blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = lastCompany.replace(/\s+/g, '-').toLowerCase() + '-competitive-brief.docx';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+    }
+
+    // Allow pressing Enter in the input field to trigger generation
+    document.getElementById('company-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') generateBrief();
+    });
+  </script>
+
+</body>
+</html>
